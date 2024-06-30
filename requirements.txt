@@ -1,0 +1,35 @@
+nvidia-cudnn-cu11==8.9.2.26
+albumentations>=1.1.0
+opencv-python>=4.2.0.34
+pudb>=2019.2
+imageio>=2.14.1
+imageio-ffmpeg>=0.4.7
+omegaconf>=2.1.1
+test-tube>=0.7.5
+streamlit>=1.24.0
+setuptools>=59.5.0
+pillow>=9.0.1
+einops>=0.4.1
+torch-fidelity>=0.3.0
+transformers>=4.32.0
+torchmetrics>=0.6.0
+kornia>=0.6
+exrex
+tensorflow>=2.12.0
+deepface>=0.0.79
+nvidia-pyindex
+nvidia-tensorrt
+captionizer
+safetensors
+wandb
+gradio
+diffusers
+webdataset
+bitsandbytes
+prodigyopt
+numpy>=1.24.0
+onnxruntime-gpu
+insightface
+-e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
+-e git+https://github.com/openai/CLIP.git@main#egg=clip
+-e .
