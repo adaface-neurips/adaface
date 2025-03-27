@@ -1,0 +1,5 @@
+#!/usr/bin/fish
+#                           1             2         3               4          5               6                7           8                   9               10      11              12              13              14          15              16              17          18              19              20                  21              22              
+set -g subjects             alexachung    alita     caradelevingne  donnieyen  gabrielleunion  iainarmitage     jaychou     jenniferlawrence    keanureeves     lisa    masatosakai     michelleyeoh    ryangosling     sandraoh    selenagomez     smritimandhana  spikelee    stephenchow     taylorswift     timotheechalamet    tomholland      zendaya
+set -g subj_types           woman         woman     woman           man        woman           man              man         woman               man             woman   man             woman           man             woman       woman           woman           man         man             woman           man                 man             woman
+set -g data_folder         subjects-celebrity

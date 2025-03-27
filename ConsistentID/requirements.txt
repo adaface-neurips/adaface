@@ -1,0 +1,15 @@
+accelerate
+safetensors
+einops
+onnxruntime-gpu
+omegaconf
+peft
+opencv-python
+insightface
+diffusers
+torch
+torchvision
+transformers
+spaces
+huggingface-hub
+sentencepiece

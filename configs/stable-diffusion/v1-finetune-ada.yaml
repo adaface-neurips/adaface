@@ -1,0 +1,194 @@
+model:
+  base_learning_rate: 8e-04
+  weight_decay: 0.0
+
+  target: ldm.models.diffusion.ddpm.LatentDiffusion
+  params:
+    # linear_start/linear_end: params for linear beta schedule.
+    beta_schedule: linear
+    linear_start: 0.00085
+    linear_end: 0.0120
+    num_timesteps_cond: 1
+    log_every_t: 200
+    timesteps: 1000
+    first_stage_key: image
+    cond_stage_key: caption
+    image_size: 64
+    channels: 4
+    # cond_stage_trainable has no effect, as it's checked within ddpm.instantiate_cond_stage().
+    # After this call, the model sets requires_grad=False for all params of cond_stage (CLIP encoder) 
+    # after seeing unfreeze_model = False.
+    cond_stage_trainable: true   # Note: different from the one we trained before
+    conditioning_key: crossattn
+    monitor: val/loss_ema
+    scale_factor: 0.18215
+    use_ema: False
+    unfreeze_model: False
+    model_lr: 0.0
+    use_layerwise_embedding:          True
+    use_fp_trick:                     True
+    do_clip_teacher_filtering:        True
+    num_candidate_teachers:           2
+    composition_regs_iter_gap:        3
+    do_zero_shot:                     True
+    # The percentage of arc2face_distill_iter among do_normal_recon iters.
+    arc2face_distill_iter_prob:       0.1
+    # typical loss_static_emb_reg is ~2e-3, * weight -> 4e-8.
+    # Disabled under zero-shot setting.
+    static_embedding_reg_weight:      0 #2e-5
+    # typical delta reg loss: 0.85, * weight -> 1.7e-4
+    prompt_emb_delta_reg_weight:      2e-4
+    # typical loss_mix_prompt_distill: 0.06, * weight -> 6e-5.
+    mix_prompt_distill_weight:        1e-4
+    # Apply BN/LN on cross-attn Q and out features for loss computation.
+    normalize_ca_q_and_outfeat:       True
+    comp_fg_bg_preserve_loss_weight:  1e-3
+    # fg_bg_comple: used in non-wds recon iters.
+    # loss_fg_bg_complementary: 1.5,      * weight -> 7.5e-4
+    fg_bg_complementary_loss_weight:  2e-4
+    # loss_fg_xlayer_consist ~ 0.2, loss_bg_xlayer_consist ~ 0.1. * weight -> 3e-4.
+    fg_bg_xlayer_consist_loss_weight: 5e-5
+    # Push the prompt embeddings slightly away from the null prompt embedding.
+    # NOTE: compel_cfg is disabled if doing zero-shot, even if apply_compel_cfg_prob > 0.
+    compel_cfg_weight_level_range:    [2, 2]
+    apply_compel_cfg_prob:            0.5
+    # fg_wds_comple: used in wds recon iters.
+    fg_wds_complementary_loss_weight: 0 #1e-4
+    wds_bg_recon_discount:            0.05
+    
+    optimizer_type: Prodigy           # AdamW, NAdam, Prodigy, ProdigyAdamW
+    grad_clip:  0.5
+    # Add "manual_" prefix to distinguish from the default accumulate_grad_batches.
+    manual_accumulate_grad_batches: 2
+    adam_config:
+      betas:    [0.9,  0.993]  # 0.993 corresponds to a half life of 99. 0.999 corresponds to a half life of 693.        
+      scheduler_config:
+        target: ldm.lr_scheduler.LambdaWarmUpCosineScheduler
+        params:
+          verbosity_interval: 0
+          warm_up_steps: 500
+          lr_start:      0.01
+          lr_max:        1.0
+          lr_min:        0.1
+
+    prodigy_config:
+      betas:    [0.985, 0.993]  # Faster to converge than zs_betas.
+      zs_betas: [0.9,  0.999]   # Slower to converge than betas.
+      d_coef:           2
+      warm_up_steps:    500
+      # 1 cycle after the warm_up_steps.
+      # Each cycle is linearly decreasing the LR from base_lr to 0.09*base.
+      scheduler_cycles: 1 #2
+      # CyclicLR, CosineAnnealingWarmRestarts, Linear. 
+      # Linear or CosineAnnealingWarmRestarts doesn't work well.
+      scheduler_type: 'Linear' #'CyclicLR'
+      
+    personalization_config:
+      target: ldm.modules.embedding_manager.EmbeddingManager
+      params:
+        subject_strings:          ['z']
+        background_strings:       ['y']
+        initializer_strings:      ["person", "unknown"]
+        list_initializer_word_weights: [ None, None ]
+        subj_name_to_cls_delta_string: { 'z': "person" }
+        subj_name_to_cls_delta_word_weights: { 'z': [1.0] }
+        num_vectors_per_subj_token: 9
+        use_layerwise_embedding: True
+        layerwise_lora_rank: 10
+        training_begin_add_noise_std_range:  [ 0.02, 0.04 ]
+        training_end_add_noise_std_range:    [ 0.02, 0.04 ]
+        # probs for recon_iter and compos_distill_iter, respectively
+        training_add_noise_prob:   { 'recon_iter':            0.6, 
+                                     'arc2face_distill_iter': 0,
+                                     'compos_distill_iter':   0.4 }
+        embedding_manager_ckpt:             null
+        # Load the ada components from these placeholders in the checkpoint.
+
+    unet_config:
+      target: ldm.modules.diffusionmodules.openaimodel.UNetModel
+      params:
+        image_size: 32 # unused
+        in_channels: 4
+        out_channels: 4
+        model_channels: 320
+        attention_resolutions: [ 4, 2, 1 ]
+        num_res_blocks: 2
+        channel_mult: [ 1, 2, 4, 4 ]
+        num_heads: 8
+        use_spatial_transformer: True
+        transformer_depth: 1
+        context_dim: 768
+        use_checkpoint: True
+        legacy: False
+        
+    first_stage_config:
+      target: ldm.models.autoencoder.AutoencoderKL
+      params:
+        embed_dim: 4
+        monitor: val/rec_loss
+        ddconfig:
+          double_z: true
+          z_channels: 4
+          resolution: 512
+          in_channels: 3
+          out_ch: 3
+          ch: 128
+          ch_mult:
+          - 1
+          - 2
+          - 4
+          - 4
+          num_res_blocks: 2
+          attn_resolutions: []
+          dropout: 0.0
+          #attn_type: 'none'
+
+        lossconfig:
+          target: torch.nn.Identity
+
+    cond_stage_config:
+      target: ldm.modules.encoders.modules.FrozenCLIPEmbedder
+      params:
+        last_layers_skip_weights: [0.5, 0.5]
+
+data:
+  target: main.DataModuleFromConfig
+  params:
+    batch_size:  3
+    num_workers: 1
+    wrap: false
+    max_steps: 60000
+    train:
+      target: ldm.data.personalized.PersonalizedBase
+      params:
+        size: 512       # Image resolution
+        set_name: train
+        repeats: 100
+        verbose: false
+
+    validation:
+      target: ldm.data.personalized.PersonalizedBase
+      params:
+        size: 512       # Image resolution
+        set_name: val
+        repeats: 10
+        verbose: false
+        
+lightning:
+  modelcheckpoint:
+    params:
+      every_n_train_steps: 500
+  callbacks:
+    image_logger:
+      target: main.ImageLogger
+      params:
+        batch_frequency: 800000     # 800000 >> max_steps = 60000, effectively disabling image logger.
+        max_images: 8
+        increase_log_steps: False
+
+  trainer:
+    benchmark: True
+    max_steps: 60000
+    limit_val_batches: 0.0
+    deterministic: False
+    replace_sampler_ddp: False
