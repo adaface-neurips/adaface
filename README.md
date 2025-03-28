@@ -104,3 +104,5 @@ where `--subjfile` specifies the file containing the list of subjects, and `--ra
 The AdaFace encoder is wrapped in the class [AdaFaceWrapper](/adaface/adaface_wrapper.py) for easy integration with other applications. 
 
 `AdaFace-Animate` is an example of integrating AdaFace with AnimateDiff and ID-Animator for subject-driven video generation. The code is available at [AdaFace-Animate](https://huggingface.co/spaces/adaface-neurips/adaface-animate/tree/main). The online demo is available at [AdaFace-Animate Demo](https://huggingface.co/spaces/adaface-neurips/adaface-animate).
+
+`RestorerID-AdaFace` is a personalized face restoration pipeline enhanced with AdaFace. The code is available at [RestorerID-AdaFace](https://github.com/adaface-neurips/RestorerID-adaface). It is based on [RestorerID](https://github.com/YingJiacheng/RestorerID). 
